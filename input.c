@@ -4,10 +4,10 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
-bool up   = false;
-bool down = false;
-bool right   = false;
-bool left = false;
+bool up_input   = false;
+bool down_input = false;
+bool right_input   = false;
+bool left_input = false;
 
 
 
@@ -18,28 +18,28 @@ void check_press(SDL_Event * event){
         switch (event->key.keysym.scancode)
         {
         case SDL_SCANCODE_UP:
-            up = true;
+            up_input = true;
             break;
         case SDL_SCANCODE_DOWN:
-            down = true;
+            down_input = true;
             break;
         case SDL_SCANCODE_W:
-            up = true;
+            up_input = true;
             break;
         case SDL_SCANCODE_S:
-            down = true;
+            down_input = true;
             break;
         case SDL_SCANCODE_D:
-            right = true;
+            right_input = true;
             break;
         case SDL_SCANCODE_RIGHT:
-            right = true;
+            right_input = true;
             break;
         case SDL_SCANCODE_A:
-            left = true;
+            left_input = true;
             break;
         case SDL_SCANCODE_LEFT:
-            left = true;
+            left_input = true;
             break;
         default:
             break;
@@ -49,28 +49,28 @@ void check_press(SDL_Event * event){
         switch (event->key.keysym.scancode)
         {
         case SDL_SCANCODE_UP:
-            up = false;
+            up_input = false;
             break;
         case SDL_SCANCODE_DOWN:
-            down = false;
+            down_input = false;
             break;
         case SDL_SCANCODE_W:
-            up = false;
+            up_input = false;
             break;
         case SDL_SCANCODE_S:
-            down = false;
+            down_input = false;
             break;
         case SDL_SCANCODE_D:
-            right = false;
+            right_input = false;
             break;
         case SDL_SCANCODE_RIGHT:
-            right = false;
+            right_input = false;
             break;
         case SDL_SCANCODE_A:
-            left = false;
+            left_input = false;
             break;
         case SDL_SCANCODE_LEFT:
-            left = false;
+            left_input = false;
             break;
         default:
             break;

@@ -1,3 +1,5 @@
-#define FRAME_RATE 1000
+#define FRAME_RATE 10
 #define HEIGHT 420
 #define WIDTH 690
+#define SEGMENT_RADIUS 9
+#define SEGMENT_SPACING 20
