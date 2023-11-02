@@ -198,6 +198,7 @@ void update_game(float dt)
     }
     else {
         spawn_new_apple();
+        // printf("x: %i, y: %i \n", apple.x, apple.y);
     }
    
 
@@ -332,13 +333,7 @@ void init()
 }
 void update(float dt)
 {
-    if (SDL_PollEvent(&window_event))
-    {
-        if (window_event.type == SDL_QUIT)
-        {
-            not_lost = false;
-        }
-    }
+    
     start = SDL_GetTicks();
     update_game(dt);
     draw();
@@ -356,9 +351,17 @@ int main(int argc, char *argv[])
 
     while (not_lost)
     {
-
+        if (SDL_PollEvent(&window_event))
+        {
+            if (window_event.type == SDL_QUIT)
+            {
+                break;
+            }
+        }
         check_press(&window_event);
+        // printf("up: %i down: %i left: %i right: %i\n", up_input, down_input, left_input, right_input);
         float dtime = DELTA_TIME_MILIS;
+
         if (dtime >= (1000.0 / FRAME_RATE))
         {
 
@@ -367,6 +370,7 @@ int main(int argc, char *argv[])
             sprintf((char(*)) & title, "snake    fps: %f\n", (1000.0 / dtime));
             SDL_SetWindowTitle(win, (char(*)) & title);
         }
+        
     }
     SDL_DestroyWindow(win);
     SDL_QuitSubSystem(SDL_INIT_EVERYTHING);
