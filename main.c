@@ -11,15 +11,15 @@
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #define RANGE(a, b) (a <= b)//(ABS(a) <= ABS(b)) 
-#define SIGN(x) (x > 0) - (x < 0)
+#define SIGN(x) ((x > 0) - (x < 0)) 
 #define ABS(x) ((signed int)x)*(sign((signed int)x))
 #define MOD(a,b) ((a%b)+b)%b
 
 #define CLEAN_FACE(a) a & 3
 
 typedef struct {
-    unsigned short int x;
-    unsigned short int y;
+    signed short int x;
+    signed short int y;
     
 } vec2_int;
 
@@ -47,15 +47,15 @@ SDL_Window *win;
 SDL_Renderer * renderer;
 
 
-vec2_int facing_to_vec(snake_segment segment){
+vec2_int facing_to_vec(face facing){
     vec2_int delta = {
         .x = 0,
         .y = 0
     };
-    delta.y -= (SEGMENT_SPACING * ((segment.facing.up) && (!segment.facing.down))); // up
-    delta.y += (SEGMENT_SPACING * ((!segment.facing.up) && (segment.facing.down))); // down
-    delta.x += (SEGMENT_SPACING * ((!segment.facing.up) && (!segment.facing.down))); // right
-    delta.x -= (SEGMENT_SPACING * ((segment.facing.up) && (segment.facing.down))); // left
+    delta.y -= (SEGMENT_SPACING*((facing.up) && (!facing.down))); // up
+    delta.y += (SEGMENT_SPACING*((!facing.up) && (facing.down))); // down
+    delta.x += (SEGMENT_SPACING*((!facing.up) && (!facing.down))); // right
+    delta.x -= (SEGMENT_SPACING*((facing.up) && (facing.down))); // left
     return delta;
 }
 
@@ -130,7 +130,7 @@ void update_game(float dt){
     // printf("%i\n", CLEAN_FACE(p_new_segment->facing.as_char));
 
     // move head
-    vec2_int delta = facing_to_vec(*p_new_segment);
+    vec2_int delta = facing_to_vec(p_new_segment->facing);
     p_new_segment->location.y += delta.y;
     p_new_segment->location.x += delta.x;
     
@@ -152,20 +152,51 @@ void draw()
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
     node * p_cur = p_snake_head;
-    SDL_Rect rect = {
+    SDL_Rect segment_rect = {
         .h = 2*SEGMENT_RADIUS+1,
         .w = 2*SEGMENT_RADIUS+1,
         .x = 0,
         .y = 0
     };
-    while (p_cur != NULL)
+
+    SDL_Rect connection_rect = {
+        .h = SEGMENT_SPACING,
+        .w = SEGMENT_SPACING,
+        .x = 0,
+        .y = 0
+    };
+    // draws rest of snake segments and connects them
+    while (p_cur->p_next != NULL)
     {   
         snake_segment * p_segment = ((snake_segment *)(p_cur->p_data));
-        rect.x = p_segment->location.x - SEGMENT_RADIUS;
-        rect.y = p_segment->location.y - SEGMENT_RADIUS;
-        SDL_RenderFillRect(renderer, &(rect));
+
+        // draw the segment
+        segment_rect.x = p_segment->location.x - SEGMENT_RADIUS; 
+        segment_rect.y = p_segment->location.y - SEGMENT_RADIUS;
+        SDL_RenderFillRect(renderer, &(segment_rect));
+
+        // draw connections
+        face connection_facing = p_segment->facing;
+        connection_facing.as_char = ~connection_facing.as_char;
+        vec2_int delta = facing_to_vec(connection_facing);
+        connection_rect.x = segment_rect.x;
+        connection_rect.y = segment_rect.y; 
+        connection_rect.h = ((signed short)delta.y) + ((2*SEGMENT_RADIUS+1));
+        connection_rect.w = ((signed short)delta.x) + ((2*SEGMENT_RADIUS+1));
+        // printf("\n%i\n", SIGN((signed short) delta.x));
+        // printf("%i\n", ((signed short)(2*SEGMENT_RADIUS+1))*SIGN((signed short) delta.x));
+
+        SDL_RenderFillRect(renderer, &connection_rect);
+
         p_cur = p_cur->p_next;
+        
     }
+    // draw last segment indpendently to not draw its connection
+    snake_segment * p_segment = ((snake_segment *)(p_cur->p_data));
+    segment_rect.x = p_segment->location.x - SEGMENT_RADIUS; 
+    segment_rect.y = p_segment->location.y - SEGMENT_RADIUS;
+    SDL_RenderFillRect(renderer, &(segment_rect));
+
     
     // // for (int i = 0; i < main_window.width; i++){
     // //     for (int j = 0; j < main_window.height; j++){
