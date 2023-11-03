@@ -1,8 +1,11 @@
+// gameplay settings
 #define FRAME_RATE 7
-#define SEGMENT_RADIUS 9
-#define APPLE_RADIUS 5
+#define GRID_HEIGHT 15
+#define GRID_WIDTH 20
+// graphics settings
 #define SEGMENT_SPACING 30
-#define GRID_HEIGHT 10
-#define GRID_WIDTH 15
+#define SEGMENT_RADIUS 9
+#define APPLE_RADIUS 10
+
 #define HEIGHT (SEGMENT_SPACING * GRID_HEIGHT)
-#define WIDTH (SEGMENT_SPACING * GRID_WIDTH)
+#define WIDTH  (SEGMENT_SPACING * GRID_WIDTH)

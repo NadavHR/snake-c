@@ -43,6 +43,8 @@ typedef struct snake_segment
 } snake_segment;
 
 bool not_lost = true;
+bool is_grace_frame = false; // grace frame is an extra frame given when you are about to die so you could save yourself
+unsigned short score = 0;
 unsigned int start;
 node *p_snake_head; // snake is linked list of snake_segment's
 vec2_short apple = {
@@ -81,7 +83,7 @@ vec2_short screen_pos_to_grid_pos(vec2_short screen_pos){
 }
 void spawn_new_apple() {
     vec2_short * full_grid[GRID_WIDTH][GRID_HEIGHT];
-    vec2_short * grid_as_1d = full_grid;
+    // vec2_short * grid_as_1d = full_grid;
     node * p_cur = p_snake_head;
     unsigned short snake_length = 0;
 
@@ -91,23 +93,27 @@ void spawn_new_apple() {
     // putts all taken snake segments in the begining of the grid 
     while (p_cur != NULL)
     {
-        vec2_short grid_pos = screen_pos_to_grid_pos(((snake_segment *)p_cur->p_data)->location);
+        snake_segment * p_cur_seg = (snake_segment *)(p_cur->p_data);
+        vec2_short grid_pos = screen_pos_to_grid_pos(p_cur_seg->location);
         // *(grid_as_1d + snake_length) = grid_pos;
-        full_grid[grid_pos.y][grid_pos.x] = &((vec2_short){.x = snake_length % GRID_WIDTH,
-                                                        .y = snake_length / GRID_WIDTH});
+        vec2_short * p_position = alloca(sizeof(vec2_short));
+        *p_position = (vec2_short){.x = snake_length % GRID_WIDTH,
+                                .y = snake_length / GRID_WIDTH};
+        full_grid[grid_pos.x][grid_pos.y] = p_position;
         snake_length++;
         p_cur = p_cur->p_next;
     }
 
     short random_in_range = RAND_RANGE(snake_length, GRID_HEIGHT*GRID_WIDTH);
     // printf("%i\n", (full_grid[(random_in_range % GRID_WIDTH)][(random_in_range / GRID_WIDTH)]));
-    if ((full_grid[(random_in_range % GRID_WIDTH)][(random_in_range / GRID_WIDTH)]) == NULL) {
+    vec2_short * p_chosen = (full_grid[(random_in_range % GRID_WIDTH)][(random_in_range / GRID_WIDTH)]);
+    if (p_chosen == NULL) {
         apple.x = (random_in_range % GRID_WIDTH) * SEGMENT_SPACING;
         apple.y = (random_in_range / GRID_WIDTH) * SEGMENT_SPACING;
     }
     else{
-        apple.x = (grid_as_1d + random_in_range)->x;
-        apple.y = (grid_as_1d + random_in_range)->y;
+        apple.x = (p_chosen->x) * SEGMENT_SPACING;
+        apple.y = (p_chosen->y) * SEGMENT_SPACING;
     }
 }
 
@@ -127,21 +133,30 @@ void check_colisions()
 
         // p_head_segment->location.x = WIDTH/2; // for debug
         // p_head_segment->location.y = HEIGHT/2;// for debug
-
-        not_lost = false; // death
+        if (is_grace_frame){
+            not_lost = false; // death
+        }
+        else {
+            is_grace_frame = true;
+        }
     }
     else
     {
         // check self collision
         node *p_cur = p_snake_head->p_next;
         // printf("(%i, %i) -> ", p_head_segment->location.x, p_head_segment->location.y); // TEMP
-        while (p_cur != NULL)
+        while (p_cur->p_next != NULL) // the last segment isnt checked as its supposed to be removed
         {
             vec2_short cur_location = ((snake_segment *)p_cur->p_data)->location;
             // printf("(%i, %i) -> ", cur_location.x, cur_location.y); // TEMP
             if (!memcmp(&cur_location, &p_head_segment->location, sizeof(vec2_short)))
             {
-                not_lost = false; // death
+                if (is_grace_frame){
+                    not_lost = false; // death
+                } else {
+                    is_grace_frame = true;
+                }
+                
                 // printf("death");
                 break;
             }
@@ -191,18 +206,29 @@ void update_game(float dt)
     p_new_segment->location.y += delta.y;
     p_new_segment->location.x += delta.x;
 
-    // remove tail
-    if (!((p_new_segment->location.y == apple.y) && (p_new_segment->location.x == apple.x)))
+    check_colisions();
+    if (!is_grace_frame)
     {
-        delete_end(); // TODO: make it conditional to if eaten apple
+        // remove tail
+        if (!((p_new_segment->location.y == apple.y) && (p_new_segment->location.x == apple.x)))
+        {
+            delete_end(); // TODO: make it conditional to if eaten apple
+        }
+        else {
+            score++;
+            spawn_new_apple();
+            // printf("x: %i, y: %i \n", apple.x, apple.y);
+        }
+    } else {
+        p_snake_head = p_new_head->p_next;
+        free(p_new_head);
+        free(p_new_segment);
     }
-    else {
-        spawn_new_apple();
-        // printf("x: %i, y: %i \n", apple.x, apple.y);
-    }
+    
+    
    
 
-    check_colisions();
+    
 }
 
 void draw()
@@ -231,8 +257,8 @@ void draw()
         snake_segment *p_segment = ((snake_segment *)(p_cur->p_data));
 
         // draw the segment
-        segment_rect.x = p_segment->location.x - SEGMENT_RADIUS;
-        segment_rect.y = p_segment->location.y - SEGMENT_RADIUS;
+        segment_rect.x = p_segment->location.x - SEGMENT_RADIUS + (0.5 * SEGMENT_SPACING);
+        segment_rect.y = p_segment->location.y - SEGMENT_RADIUS + (0.5 * SEGMENT_SPACING);
         SDL_RenderFillRect(renderer, &(segment_rect));
 
         // draw connections
@@ -252,14 +278,15 @@ void draw()
     }
     // draw last segment indpendently to not draw its connection
     snake_segment *p_segment = ((snake_segment *)(p_cur->p_data));
-    segment_rect.x = p_segment->location.x - SEGMENT_RADIUS;
-    segment_rect.y = p_segment->location.y - SEGMENT_RADIUS;
+    segment_rect.x = p_segment->location.x - SEGMENT_RADIUS + (0.5 * SEGMENT_SPACING);
+    segment_rect.y = p_segment->location.y - SEGMENT_RADIUS + (0.5 * SEGMENT_SPACING);
     SDL_RenderFillRect(renderer, &(segment_rect));
 
     // draw apple
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
     SDL_Rect apple_rect = {
-        .x = apple.x - APPLE_RADIUS,
-        .y = apple.y - APPLE_RADIUS,
+        .x = apple.x - APPLE_RADIUS + (0.5 * SEGMENT_SPACING),
+        .y = apple.y - APPLE_RADIUS + (0.5 * SEGMENT_SPACING),
         .w = 2*APPLE_RADIUS + 1,
         .h = 2*APPLE_RADIUS + 1
     };
@@ -312,7 +339,8 @@ void draw()
 void init()
 {
     SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, 0, &win, &renderer);
+    SDL_CreateWindowAndRenderer(WIDTH + SEGMENT_SPACING,
+     HEIGHT + SEGMENT_SPACING, 0, &win, &renderer); // adds segment spacing height and width to fix apple border spawning
 
     SDL_RenderSetScale(renderer, 1, 1);
 
@@ -343,7 +371,7 @@ void update(float dt)
 int main(int argc, char *argv[])
 {
 
-    char title[] = "snake";
+    char title[64];
     init();
     // free(p_snake_head);
 
@@ -367,13 +395,12 @@ int main(int argc, char *argv[])
 
             update(dtime);
 
-            sprintf((char(*)) & title, "snake    fps: %f\n", (1000.0 / dtime));
+            snprintf((char(*)) & title, 64, "snake    fps: %f    score: %i\n", (1000.0 / dtime), score);
             SDL_SetWindowTitle(win, (char(*)) & title);
         }
         
     }
     SDL_DestroyWindow(win);
-    SDL_QuitSubSystem(SDL_INIT_EVERYTHING);
     SDL_Quit();
     return 0;
 }
