@@ -83,9 +83,10 @@ vec2_short screen_pos_to_grid_pos(vec2_short screen_pos){
 }
 void spawn_new_apple() {
     vec2_short * full_grid[GRID_WIDTH][GRID_HEIGHT];
+    vec2_short (*positions_pointers)[score] = _malloca(score*sizeof(vec2_short));
     // vec2_short * grid_as_1d = full_grid;
     node * p_cur = p_snake_head;
-    unsigned short snake_length = 0;
+    unsigned short cur_snake_index = 0;
 
     for (unsigned int i = 0; i < GRID_HEIGHT*GRID_WIDTH; i++){
         full_grid[(i % GRID_WIDTH)][(i / GRID_WIDTH)] = NULL;
@@ -95,16 +96,19 @@ void spawn_new_apple() {
     {
         snake_segment * p_cur_seg = (snake_segment *)(p_cur->p_data);
         vec2_short grid_pos = screen_pos_to_grid_pos(p_cur_seg->location);
-        // *(grid_as_1d + snake_length) = grid_pos;
-        vec2_short * p_position = alloca(sizeof(vec2_short));
-        *p_position = (vec2_short){.x = snake_length % GRID_WIDTH,
-                                .y = snake_length / GRID_WIDTH};
-        full_grid[grid_pos.x][grid_pos.y] = p_position;
-        snake_length++;
+        // *(grid_as_1d + cur_snake_index) = grid_pos;
+        // vec2_short * p_position = alloca(sizeof(vec2_short)); // alloca tends to cause stack overflows when used here
+        (*positions_pointers)[cur_snake_index] = (vec2_short){.x = cur_snake_index % GRID_WIDTH,
+                                .y = cur_snake_index / GRID_WIDTH};
+        // *p_position = (vec2_short){.x = cur_snake_index % GRID_WIDTH,
+        //                         .y = cur_snake_index / GRID_WIDTH};
+        full_grid[grid_pos.x][grid_pos.y] = &((*positions_pointers)[cur_snake_index]);
+        // full_grid[grid_pos.x][grid_pos.y] = p_position;
+        cur_snake_index++;
         p_cur = p_cur->p_next;
     }
 
-    short random_in_range = RAND_RANGE(snake_length, GRID_HEIGHT*GRID_WIDTH);
+    short random_in_range = RAND_RANGE(cur_snake_index, GRID_HEIGHT*GRID_WIDTH);
     // printf("%i\n", (full_grid[(random_in_range % GRID_WIDTH)][(random_in_range / GRID_WIDTH)]));
     vec2_short * p_chosen = (full_grid[(random_in_range % GRID_WIDTH)][(random_in_range / GRID_WIDTH)]);
     if (p_chosen == NULL) {
@@ -115,6 +119,9 @@ void spawn_new_apple() {
         apple.x = (p_chosen->x) * SEGMENT_SPACING;
         apple.y = (p_chosen->y) * SEGMENT_SPACING;
     }
+    // free((char (*) [score*sizeof(vec2_short)])positions_pointers);
+    _freea(positions_pointers);
+    
 }
 
 
@@ -134,7 +141,11 @@ void check_colisions()
         // p_head_segment->location.x = WIDTH/2; // for debug
         // p_head_segment->location.y = HEIGHT/2;// for debug
         if (is_grace_frame){
+
+            #if !INVINCIBILITY
             not_lost = false; // death
+            #endif
+            
         }
         else {
             is_grace_frame = true;
@@ -151,8 +162,10 @@ void check_colisions()
             // printf("(%i, %i) -> ", cur_location.x, cur_location.y); // TEMP
             if (!memcmp(&cur_location, &p_head_segment->location, sizeof(vec2_short)))
             {
-                if (is_grace_frame){
+                if (is_grace_frame) {
+                    #if !INVINCIBILITY
                     not_lost = false; // death
+                    #endif
                 } else {
                     is_grace_frame = true;
                 }
@@ -212,7 +225,7 @@ void update_game(float dt)
         // remove tail
         if (!((p_new_segment->location.y == apple.y) && (p_new_segment->location.x == apple.x)))
         {
-            delete_end(); // TODO: make it conditional to if eaten apple
+            delete_end(); 
         }
         else {
             score++;
@@ -223,6 +236,9 @@ void update_game(float dt)
         p_snake_head = p_new_head->p_next;
         free(p_new_head);
         free(p_new_segment);
+        #if INVINCIBILITY
+        is_grace_frame = false;
+        #endif
     }
     
     
