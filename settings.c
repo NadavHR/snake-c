@@ -9,7 +9,7 @@
 
 // cheats
 #define INVINCIBILITY true
-#define APPLE_RESPAWN_BUTTON true
+#define APPLE_EAT_BUTTON true
 
 #define HEIGHT (SEGMENT_SPACING * GRID_HEIGHT)
 #define WIDTH  (SEGMENT_SPACING * GRID_WIDTH)

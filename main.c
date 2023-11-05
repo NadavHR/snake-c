@@ -10,7 +10,7 @@
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define RANGE(a, b) (a <= b) //(ABS(a) <= ABS(b))
+#define RANGE(a, b) (a < b) //(ABS(a) <= ABS(b))
 #define SIGN(x) ((x > 0) - (x < 0))
 #define ABS(x) ((signed int)x) * (sign((signed int)x))
 #define MOD(a, b) (((a % b) + b) % b)
@@ -76,14 +76,14 @@ vec2_short grid_pos_to_screen_pos(vec2_short grid_pos){
 }
 vec2_short screen_pos_to_grid_pos(vec2_short screen_pos){
     vec2_short grid_pos = {
-        .x = screen_pos.x / SEGMENT_SPACING,
-        .y = screen_pos.y / SEGMENT_SPACING
-    };
-    return grid_pos;
+        .x = (screen_pos.x / SEGMENT_SPACING),
+        .y = (screen_pos.y / SEGMENT_SPACING) 
+     };
+     return grid_pos;
 }
 
 void spawn_new_apple() {
-    vec2_short * full_grid[GRID_WIDTH][GRID_HEIGHT];
+    vec2_short * full_grid[GRID_WIDTH][GRID_HEIGHT]; 
     vec2_short * positions_pointers = malloc((score+1)*sizeof(vec2_short)); // score+1 to ensure it always allocates enough
     node * p_cur = p_snake_head;
     unsigned short cur_snake_index = 0;
@@ -91,16 +91,17 @@ void spawn_new_apple() {
     for (unsigned int i = 0; i < GRID_HEIGHT*GRID_WIDTH; i++){
         full_grid[(i % GRID_WIDTH)][(i / GRID_WIDTH)] = NULL;
     }
+    vec2_short grid_pos;
     // putts all taken snake segments in the begining of the grid 
     while (p_cur != NULL)
     {
-        snake_segment * p_cur_seg = (snake_segment *)(p_cur->p_data);
-        vec2_short grid_pos = screen_pos_to_grid_pos(p_cur_seg->location);
+        snake_segment p_cur_seg = *((snake_segment *)(p_cur->p_data));
+        grid_pos = screen_pos_to_grid_pos(p_cur_seg.location);
         *(positions_pointers+cur_snake_index) = (vec2_short){.x = cur_snake_index % GRID_WIDTH,
                                 .y = cur_snake_index / GRID_WIDTH};
         full_grid[grid_pos.x][grid_pos.y] = (positions_pointers+cur_snake_index);
-        cur_snake_index++;
-        p_cur = p_cur->p_next;
+        cur_snake_index++; 
+        p_cur = (node *)(p_cur->p_next);
     }
 
     short random_in_range = RAND_RANGE(cur_snake_index, GRID_HEIGHT*GRID_WIDTH);
@@ -214,6 +215,14 @@ void update_game(float dt)
     p_new_segment->location.y += delta.y;
     p_new_segment->location.x += delta.x;
 
+    #if APPLE_EAT_BUTTON
+    if (apple_eat){
+        apple.x = p_new_segment->location.x;
+        apple.y = p_new_segment->location.y;                  
+    }
+    #endif
+
+
     check_colisions();
     if (!is_grace_frame)
     {
@@ -233,11 +242,7 @@ void update_game(float dt)
         free(p_new_segment);
     }
     
-    #if APPLE_RESPAWN_BUTTON
-    if (apple_respawn){
-        spawn_new_apple();
-    }
-    #endif
+    
     
    
 
@@ -352,8 +357,8 @@ void draw()
 void init()
 {
     SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_CreateWindowAndRenderer(WIDTH + SEGMENT_SPACING,
-     HEIGHT + SEGMENT_SPACING, 0, &win, &renderer); // adds segment spacing height and width to fix apple border spawning
+    SDL_CreateWindowAndRenderer(WIDTH,
+     HEIGHT, 0, &win, &renderer); // adds segment spacing height and width to fix apple border spawning
 
     SDL_RenderSetScale(renderer, 1, 1);
 

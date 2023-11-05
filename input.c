@@ -10,7 +10,7 @@ bool right_input = false;
 bool left_input  = false;
 
 
-bool apple_respawn = false;
+bool apple_eat = false;
 
 
 
@@ -45,7 +45,7 @@ void check_press(SDL_Event * event){
             left_input = true;
             break;
         case SDL_SCANCODE_SPACE:
-            apple_respawn = true;
+            apple_eat = true;
             break;
         default:
             break;
@@ -79,7 +79,7 @@ void check_press(SDL_Event * event){
             left_input = false;
             break;
         case SDL_SCANCODE_SPACE:
-            apple_respawn = false;
+            apple_eat = false;
             break;
         default:
             break;
