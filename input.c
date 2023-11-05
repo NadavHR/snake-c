@@ -4,10 +4,13 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
-bool up_input   = false;
-bool down_input = false;
-bool right_input   = false;
-bool left_input = false;
+bool up_input    = false;
+bool down_input  = false;
+bool right_input = false;
+bool left_input  = false;
+
+
+bool apple_respawn = false;
 
 
 
@@ -41,6 +44,9 @@ void check_press(SDL_Event * event){
         case SDL_SCANCODE_LEFT:
             left_input = true;
             break;
+        case SDL_SCANCODE_SPACE:
+            apple_respawn = true;
+            break;
         default:
             break;
         }
@@ -71,6 +77,9 @@ void check_press(SDL_Event * event){
             break;
         case SDL_SCANCODE_LEFT:
             left_input = false;
+            break;
+        case SDL_SCANCODE_SPACE:
+            apple_respawn = false;
             break;
         default:
             break;

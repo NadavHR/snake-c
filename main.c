@@ -81,10 +81,10 @@ vec2_short screen_pos_to_grid_pos(vec2_short screen_pos){
     };
     return grid_pos;
 }
+
 void spawn_new_apple() {
     vec2_short * full_grid[GRID_WIDTH][GRID_HEIGHT];
-    vec2_short (*positions_pointers)[score] = _malloca(score*sizeof(vec2_short));
-    // vec2_short * grid_as_1d = full_grid;
+    vec2_short * positions_pointers = malloc((score+1)*sizeof(vec2_short)); // score+1 to ensure it always allocates enough
     node * p_cur = p_snake_head;
     unsigned short cur_snake_index = 0;
 
@@ -96,14 +96,9 @@ void spawn_new_apple() {
     {
         snake_segment * p_cur_seg = (snake_segment *)(p_cur->p_data);
         vec2_short grid_pos = screen_pos_to_grid_pos(p_cur_seg->location);
-        // *(grid_as_1d + cur_snake_index) = grid_pos;
-        // vec2_short * p_position = alloca(sizeof(vec2_short)); // alloca tends to cause stack overflows when used here
-        (*positions_pointers)[cur_snake_index] = (vec2_short){.x = cur_snake_index % GRID_WIDTH,
+        *(positions_pointers+cur_snake_index) = (vec2_short){.x = cur_snake_index % GRID_WIDTH,
                                 .y = cur_snake_index / GRID_WIDTH};
-        // *p_position = (vec2_short){.x = cur_snake_index % GRID_WIDTH,
-        //                         .y = cur_snake_index / GRID_WIDTH};
-        full_grid[grid_pos.x][grid_pos.y] = &((*positions_pointers)[cur_snake_index]);
-        // full_grid[grid_pos.x][grid_pos.y] = p_position;
+        full_grid[grid_pos.x][grid_pos.y] = (positions_pointers+cur_snake_index);
         cur_snake_index++;
         p_cur = p_cur->p_next;
     }
@@ -119,8 +114,7 @@ void spawn_new_apple() {
         apple.x = (p_chosen->x) * SEGMENT_SPACING;
         apple.y = (p_chosen->y) * SEGMENT_SPACING;
     }
-    // free((char (*) [score*sizeof(vec2_short)])positions_pointers);
-    _freea(positions_pointers);
+    free(positions_pointers);
     
 }
 
@@ -171,10 +165,11 @@ void check_colisions()
                 }
                 
                 // printf("death");
-                break;
+                return ;
             }
             p_cur = p_cur->p_next;
         }
+        is_grace_frame = false;
         // printf("\n\n\n"); // TEMP
     }
 }
@@ -236,11 +231,13 @@ void update_game(float dt)
         p_snake_head = p_new_head->p_next;
         free(p_new_head);
         free(p_new_segment);
-        #if INVINCIBILITY
-        is_grace_frame = false;
-        #endif
     }
     
+    #if APPLE_RESPAWN_BUTTON
+    if (apple_respawn){
+        spawn_new_apple();
+    }
+    #endif
     
    
 
