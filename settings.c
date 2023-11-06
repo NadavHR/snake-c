@@ -6,9 +6,10 @@
 #define SEGMENT_SPACING 30
 #define SEGMENT_RADIUS 9
 #define APPLE_RADIUS 10
+#define TEXT_LINE_RADIUS 10
 
 // cheats
-#define INVINCIBILITY true
+#define INVINCIBILITY false
 #define APPLE_EAT_BUTTON true
 
 #define HEIGHT (SEGMENT_SPACING * GRID_HEIGHT)

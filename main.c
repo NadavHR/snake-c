@@ -5,6 +5,7 @@
 #include "node.c"
 #include "input.c"
 #include "settings.c"
+#include "text.c"
 
 #define DELTA_TIME_MILIS ((float)(SDL_GetTicks() - start))
 
@@ -43,6 +44,7 @@ typedef struct snake_segment
 } snake_segment;
 
 bool not_lost = true;
+bool won = false;
 bool is_grace_frame = false; // grace frame is an extra frame given when you are about to die so you could save yourself
 unsigned short score = 0;
 unsigned int start;
@@ -103,7 +105,7 @@ void spawn_new_apple() {
         cur_snake_index++; 
         p_cur = (node *)(p_cur->p_next);
     }
-    short random_in_range = RAND_RANGE(cur_snake_index, GRID_HEIGHT*GRID_WIDTH) - 1;// -1 bc this goes from 1 to 300 instead of from 0 to 299
+    short random_in_range = RAND_RANGE(cur_snake_index, GRID_HEIGHT*GRID_WIDTH) - 1;// -1 bc this goes from 1 to (GRID_HEIGHT*GRID_WIDTH) instead of from 0 to (GRID_HEIGHT*GRID_WIDTH - 1)
     // printf("%i\n", (full_grid[(random_in_range % GRID_WIDTH)][(random_in_range / GRID_WIDTH)]));
 
     vec2_short * p_chosen = (full_grid[(random_in_range / GRID_HEIGHT)][(random_in_range % GRID_HEIGHT)]);
@@ -239,7 +241,15 @@ void update_game(float dt)
         }
         else {
             score++;
-            spawn_new_apple();
+
+            if (score + 1 != GRID_HEIGHT*GRID_WIDTH) // score + 1 to turn it from 0 to (GRID_HEIGHT*GRID_WIDTH - 1) to 1 to (GRID_HEIGHT*GRID_WIDTH)
+            {
+                spawn_new_apple();
+            } else {
+                won = true;
+            }
+            
+            
             // printf("x: %i, y: %i \n", apple.x, apple.y);
         }
     } else {
@@ -255,7 +265,7 @@ void update_game(float dt)
     
 }
 
-void draw()
+void draw_frame()
 {
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
@@ -360,6 +370,30 @@ void draw()
     SDL_RenderPresent(renderer);
 }
 
+void draw_end_screen(line lines[], unsigned short size){
+    SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderFillRect(renderer, NULL);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
+    for (int i = 0; i <= TEXT_LINE_RADIUS; i++){
+        for (int j = 0; j < size/sizeof(line); j++){
+            SDL_RenderDrawLine(renderer,
+                ((int)lines[j].x1) - i,
+                ((int)lines[j].y1),
+                ((int)lines[j].x2) - i,
+                ((int)lines[j].y2));
+            // SDL_RenderDrawLine(renderer,
+            //     ((int)lines[j].x1),
+            //     ((int)lines[j].y1) - i,
+            //     ((int)lines[j].x2),
+            //     ((int)lines[j].y2) - i);
+        }
+        
+    }
+
+    SDL_RenderPresent(renderer);
+}
+
 void init()
 {
     SDL_Init(SDL_INIT_EVERYTHING);
@@ -388,7 +422,7 @@ void update(float dt)
     
     start = SDL_GetTicks();
     update_game(dt);
-    draw();
+    draw_frame();
 }
 
 // int SDLMAIN_DECLSPEC SDL_main(int argc, char *argv[])
@@ -401,7 +435,7 @@ int main(int argc, char *argv[])
 
     SDL_SetWindowTitle(win, (char(*)) & title);
 
-    while (not_lost)
+    while (not_lost && (!won))
     {
         if (SDL_PollEvent(&window_event))
         {
@@ -423,6 +457,13 @@ int main(int argc, char *argv[])
             SDL_SetWindowTitle(win, (char(*)) & title);
         }
         
+    }
+    if (won){
+        // win screen
+    } else { // lost
+        line (*lines)[sizeof(unscaled_win_text)/sizeof(line)] = to_screen_coords(unscaled_win_text, sizeof(unscaled_win_text), (float)WIDTH, (float)HEIGHT);
+        draw_end_screen(*lines, sizeof(*lines));
+        free(lines);
     }
     SDL_DestroyWindow(win);
     SDL_Quit();
