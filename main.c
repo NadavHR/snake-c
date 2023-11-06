@@ -89,7 +89,7 @@ void spawn_new_apple() {
     unsigned short cur_snake_index = 0;
 
     for (unsigned int i = 0; i < GRID_HEIGHT*GRID_WIDTH; i++){
-        full_grid[(i % GRID_WIDTH)][(i / GRID_WIDTH)] = NULL;
+        full_grid[(i / GRID_HEIGHT)][(i % GRID_HEIGHT)] = NULL;
     }
     vec2_short grid_pos;
     // putts all taken snake segments in the begining of the grid 
@@ -97,21 +97,26 @@ void spawn_new_apple() {
     {
         snake_segment p_cur_seg = *((snake_segment *)(p_cur->p_data));
         grid_pos = screen_pos_to_grid_pos(p_cur_seg.location);
-        *(positions_pointers+cur_snake_index) = (vec2_short){.x = cur_snake_index % GRID_WIDTH,
-                                .y = cur_snake_index / GRID_WIDTH};
+        *(positions_pointers+cur_snake_index) = (vec2_short){.x = cur_snake_index / GRID_HEIGHT,
+                                .y = cur_snake_index % GRID_HEIGHT};
         full_grid[grid_pos.x][grid_pos.y] = (positions_pointers+cur_snake_index);
         cur_snake_index++; 
         p_cur = (node *)(p_cur->p_next);
     }
-
-    short random_in_range = RAND_RANGE(cur_snake_index, GRID_HEIGHT*GRID_WIDTH);
+    short random_in_range = RAND_RANGE(cur_snake_index, GRID_HEIGHT*GRID_WIDTH) - 1;// -1 bc this goes from 1 to 300 instead of from 0 to 299
     // printf("%i\n", (full_grid[(random_in_range % GRID_WIDTH)][(random_in_range / GRID_WIDTH)]));
-    vec2_short * p_chosen = (full_grid[(random_in_range % GRID_WIDTH)][(random_in_range / GRID_WIDTH)]);
+
+    vec2_short * p_chosen = (full_grid[(random_in_range / GRID_HEIGHT)][(random_in_range % GRID_HEIGHT)]);
     if (p_chosen == NULL) {
-        apple.x = (random_in_range % GRID_WIDTH) * SEGMENT_SPACING;
-        apple.y = (random_in_range / GRID_WIDTH) * SEGMENT_SPACING;
+        apple.x = (random_in_range / GRID_HEIGHT) * SEGMENT_SPACING;
+        apple.y = (random_in_range % GRID_HEIGHT) * SEGMENT_SPACING;
     }
     else{
+        while (full_grid[p_chosen->x][p_chosen->y] != NULL)
+        {
+            p_chosen = full_grid[p_chosen->x][p_chosen->y];
+        }
+        
         apple.x = (p_chosen->x) * SEGMENT_SPACING;
         apple.y = (p_chosen->y) * SEGMENT_SPACING;
     }
@@ -215,17 +220,18 @@ void update_game(float dt)
     p_new_segment->location.y += delta.y;
     p_new_segment->location.x += delta.x;
 
-    #if APPLE_EAT_BUTTON
-    if (apple_eat){
-        apple.x = p_new_segment->location.x;
-        apple.y = p_new_segment->location.y;                  
-    }
-    #endif
+    
 
 
     check_colisions();
     if (!is_grace_frame)
     {
+        #if APPLE_EAT_BUTTON
+        if (apple_eat){
+            apple.x = p_new_segment->location.x;
+            apple.y = p_new_segment->location.y;                  
+        }
+        #endif
         // remove tail
         if (!((p_new_segment->location.y == apple.y) && (p_new_segment->location.x == apple.x)))
         {
