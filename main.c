@@ -134,6 +134,35 @@ void delete_end()
     free(p_segment);
 }
 
+bool check_self_intersect(vec2_short location){
+    // check self collision
+    node *p_cur = p_snake_head->p_next;
+    // snake_segment *p_head_segment = (snake_segment *)p_snake_head->p_data;
+
+    // printf("(%i, %i) -> ", p_head_segment->location.x, p_head_segment->location.y); // TEMP
+    while (p_cur->p_next != NULL) // the last segment isnt checked as its supposed to be removed
+    {
+        vec2_short cur_location = ((snake_segment *)p_cur->p_data)->location;
+        // printf("(%i, %i) -> ", cur_location.x, cur_location.y); // TEMP
+        if (!memcmp(&cur_location, &location, sizeof(vec2_short)))
+        {
+            if (is_grace_frame) {
+                #if !INVINCIBILITY
+                return false; // death
+                #endif
+            } else {
+                is_grace_frame = true;
+            }
+            
+            // printf("death");
+            return true;
+        }
+        p_cur = p_cur->p_next;
+    }
+    is_grace_frame = false;
+    return true;
+}
+
 void check_colisions()
 {
     snake_segment *p_head_segment = (snake_segment *)p_snake_head->p_data;
@@ -156,29 +185,8 @@ void check_colisions()
     }
     else
     {
-        // check self collision
-        node *p_cur = p_snake_head->p_next;
-        // printf("(%i, %i) -> ", p_head_segment->location.x, p_head_segment->location.y); // TEMP
-        while (p_cur->p_next != NULL) // the last segment isnt checked as its supposed to be removed
-        {
-            vec2_short cur_location = ((snake_segment *)p_cur->p_data)->location;
-            // printf("(%i, %i) -> ", cur_location.x, cur_location.y); // TEMP
-            if (!memcmp(&cur_location, &p_head_segment->location, sizeof(vec2_short)))
-            {
-                if (is_grace_frame) {
-                    #if !INVINCIBILITY
-                    not_lost = false; // death
-                    #endif
-                } else {
-                    is_grace_frame = true;
-                }
-                
-                // printf("death");
-                return ;
-            }
-            p_cur = p_cur->p_next;
-        }
-        is_grace_frame = false;
+
+        not_lost = check_self_intersect(p_head_segment->location);
         // printf("\n\n\n"); // TEMP
     }
 }
@@ -218,16 +226,26 @@ void update_game(float dt)
 
     p_new_head->p_data = p_new_segment; // update the new head segment to the correct pointer
 
-
+    vec2_short delta = facing_to_vec(input_buffer);
+    p_new_segment->location.y += delta.y;
+    p_new_segment->location.x += delta.x;
     p_new_segment->facing = input_buffer;
+    // if ((check_self_intersect(p_new_segment->location) && !(input_buffer.as_char == p_old_segment->facing.as_char))) {
+    //     p_new_segment->facing = input_buffer;
+    // }   
+    // else {
+    //     p_new_segment->location.y -= delta.y;
+    //     p_new_segment->location.x -= deltad.x;
+    //     vec2_short delta = facing_to_vec(p_new_segment->facing);
+    //     p_new_segment->location.y += delta.y;
+    //     p_new_segment->location.x += delta.x;
+    // }
+    
     // printf(up_input ? "true\n" : "false\n");
 
     // printf("%i\n", CLEAN_FACE(p_new_segment->facing.as_char));
 
-    // move head
-    vec2_short delta = facing_to_vec(p_new_segment->facing);
-    p_new_segment->location.y += delta.y;
-    p_new_segment->location.x += delta.x;
+
 
     
 
