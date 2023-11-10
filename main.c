@@ -48,6 +48,7 @@ bool won = false;
 bool is_grace_frame = false; // grace frame is an extra frame given when you are about to die so you could save yourself
 unsigned short score = 0;
 unsigned int start;
+face input_buffer = {.as_char = 0};
 node *p_snake_head; // snake is linked list of snake_segment's
 vec2_short apple = {
     .x = 0,
@@ -182,6 +183,27 @@ void check_colisions()
     }
 }
 
+void input_handle(){
+    snake_segment * p_old_segment = (snake_segment *)p_snake_head->p_data;
+    // if up ^ down --> direction is vertical, else direction is horizontal
+    bool last_was_vertical = p_old_segment->facing.up ^ p_old_segment->facing.down;
+    // ignore the input in both the direction old_facing and ~old_facing to make it so input in the direction the
+    //  snake is already headed in and input back to where you came from is not counted as meaningfull input and get ignored
+
+    bool _up_input = up_input && !last_was_vertical;      // ignore up input if last was vertical
+    bool _down_input = down_input && !last_was_vertical;  // ignore down input if last was vertical
+    bool _right_input = right_input && last_was_vertical; // ignore right input if last was horizontal
+    bool _left_input = left_input && last_was_vertical;   // ignore left input if last was horizontal
+
+    bool was_meaningful_input = _up_input || _down_input || _right_input || _left_input;
+
+    // if (up=down=left=right=0) --> new_facing = old_facing
+    input_buffer.up = (_up_input || _left_input) ||                                // if meaningful input in one of them value needs to be true
+                               ((!was_meaningful_input) && input_buffer.up);     // if there wasnt any meaningful input put whatever direction the snake was going last
+    input_buffer.down = (_down_input || (!_right_input && _left_input)) ||          // if meaningful input in down value needs to be true and if in right false
+                                 ((!was_meaningful_input) && input_buffer.down); // if there wasnt any meaningful input put whatever direction the snake was going last
+    // printf(was_meaningful_input ? "true\n" : "false\n");
+}
 void update_game(float dt)
 {
 
@@ -196,31 +218,18 @@ void update_game(float dt)
 
     p_new_head->p_data = p_new_segment; // update the new head segment to the correct pointer
 
+
+    p_new_segment->facing = input_buffer;
     // printf(up_input ? "true\n" : "false\n");
 
-    // if up ^ down --> direction is vertical, else direction is horizontal
-    bool last_was_vertical = p_old_segment->facing.up ^ p_old_segment->facing.down;
-    // ignore the input in both the direction old_facing and ~old_facing to make it so input in the direction the
-    //  snake is already headed in and input back to where you came from is not counted as meaningfull input and get ignored
-    up_input = up_input && !last_was_vertical;      // ignore up input if last was vertical
-    down_input = down_input && !last_was_vertical;  // ignore down input if last was vertical
-    right_input = right_input && last_was_vertical; // ignore right input if last was horizontal
-    left_input = left_input && last_was_vertical;   // ignore left input if last was horizontal
-
-    bool was_meaningful_input = up_input || down_input || right_input || left_input;
-
-    // if (up=down=left=right=0) --> new_facing = old_facing
-    p_new_segment->facing.up = (up_input || left_input) ||                                // if meaningful input in one of them value needs to be true
-                               ((!was_meaningful_input) && p_old_segment->facing.up);     // if there wasnt any meaningful input put whatever direction the snake was going last
-    p_new_segment->facing.down = (down_input || (!right_input && left_input)) ||          // if meaningful input in down value needs to be true and if in right false
-                                 ((!was_meaningful_input) && p_old_segment->facing.down); // if there wasnt any meaningful input put whatever direction the snake was going last
-    // printf(was_meaningful_input ? "true\n" : "false\n");
     // printf("%i\n", CLEAN_FACE(p_new_segment->facing.as_char));
 
     // move head
     vec2_short delta = facing_to_vec(p_new_segment->facing);
     p_new_segment->location.y += delta.y;
     p_new_segment->location.x += delta.x;
+
+    
 
     
 
@@ -445,6 +454,7 @@ int main(int argc, char *argv[])
             }
         }
         check_press(&window_event);
+        input_handle();
         // printf("up: %i down: %i left: %i right: %i\n", up_input, down_input, left_input, right_input);
         float dtime = DELTA_TIME_MILIS;
 
@@ -459,11 +469,13 @@ int main(int argc, char *argv[])
         
     }
     if (won){
+        printf("you won! \n");
         // win screen
     } else { // lost
-        line (*lines)[sizeof(unscaled_win_text)/sizeof(line)] = to_screen_coords(unscaled_win_text, sizeof(unscaled_win_text), (float)WIDTH, (float)HEIGHT);
-        draw_end_screen(*lines, sizeof(*lines));
-        free(lines);
+        printf("you lost \nscore: %i\n", score);
+        // line (*lines)[sizeof(unscaled_win_text)/sizeof(line)] = to_screen_coords(unscaled_win_text, sizeof(unscaled_win_text), (float)WIDTH, (float)HEIGHT);
+        // draw_end_screen(*lines, sizeof(*lines));
+        // free(lines);
     }
     SDL_DestroyWindow(win);
     SDL_Quit();
