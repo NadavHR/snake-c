@@ -13,7 +13,7 @@ node * arr_to_linked_list(void * arr, const unsigned int elem_size, const unsign
     head->p_data = arr;
     head->p_next = NULL;
     node * cur = head;
-    for (void * i = arr + elem_size; i < arr + array_size; i += elem_size){
+    for (void * i = (char * )arr + elem_size; (char *)i < (char *)arr + array_size; i += elem_size){  // cast to (char * ) so adding elem size would have meaning
         cur->p_next = malloc(sizeof(node));
         cur->p_next->p_data = i;
         cur->p_next->p_next = NULL;
@@ -41,7 +41,7 @@ void print_list(node * head, const char * format_spec, const unsigned int elem_s
     while (cur != NULL)
     {
         
-        printf(format_spec, **((unsigned char (*)[elem_size])(cur->p_data)));
+        printf(format_spec, **((unsigned char (*)[])(cur->p_data)));
         cur = (cur->p_next);
     }
     
