@@ -5,7 +5,7 @@
 #include "node.c"
 #include "input.c"
 #include "settings.c"
-#include "text.c"
+
 
 #define DELTA_TIME_MILIS ((float)(SDL_GetTicks() - start))
 
@@ -198,17 +198,17 @@ void input_handle(){
     // ignore the input in both the direction old_facing and ~old_facing to make it so input in the direction the
     //  snake is already headed in and input back to where you came from is not counted as meaningfull input and get ignored
 
-    bool _up_input = up_input && !last_was_vertical;      // ignore up input if last was vertical
-    bool _down_input = down_input && !last_was_vertical;  // ignore down input if last was vertical
-    bool _right_input = right_input && last_was_vertical; // ignore right input if last was horizontal
-    bool _left_input = left_input && last_was_vertical;   // ignore left input if last was horizontal
+    up_input = up_input && !last_was_vertical;      // ignore up input if last was vertical
+    down_input = down_input && !last_was_vertical;  // ignore down input if last was vertical
+    right_input = right_input && last_was_vertical; // ignore right input if last was horizontal
+    left_input = left_input && last_was_vertical;   // ignore left input if last was horizontal
 
-    bool was_meaningful_input = _up_input || _down_input || _right_input || _left_input;
+    bool was_meaningful_input = up_input || down_input || right_input || left_input;
 
     // if (up=down=left=right=0) --> new_facing = old_facing
-    input_buffer.up = (_up_input || _left_input) ||                                // if meaningful input in one of them value needs to be true
+    input_buffer.up = (up_input || left_input) ||                                // if meaningful input in one of them value needs to be true
                                ((!was_meaningful_input) && input_buffer.up);     // if there wasnt any meaningful input put whatever direction the snake was going last
-    input_buffer.down = (_down_input || (!_right_input && _left_input)) ||          // if meaningful input in down value needs to be true and if in right false
+    input_buffer.down = (down_input || (!right_input && left_input)) ||          // if meaningful input in down value needs to be true and if in right false
                                  ((!was_meaningful_input) && input_buffer.down); // if there wasnt any meaningful input put whatever direction the snake was going last
     // printf(was_meaningful_input ? "true\n" : "false\n");
 }
@@ -397,29 +397,6 @@ void draw_frame()
     SDL_RenderPresent(renderer);
 }
 
-void draw_end_screen(line lines[], unsigned short size){
-    SDL_RenderClear(renderer);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-    SDL_RenderFillRect(renderer, NULL);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
-    for (int i = 0; i <= TEXT_LINE_RADIUS; i++){
-        for (int j = 0; j < size/sizeof(line); j++){
-            SDL_RenderDrawLine(renderer,
-                ((int)lines[j].x1) - i,
-                ((int)lines[j].y1),
-                ((int)lines[j].x2) - i,
-                ((int)lines[j].y2));
-            // SDL_RenderDrawLine(renderer,
-            //     ((int)lines[j].x1),
-            //     ((int)lines[j].y1) - i,
-            //     ((int)lines[j].x2),
-            //     ((int)lines[j].y2) - i);
-        }
-        
-    }
-
-    SDL_RenderPresent(renderer);
-}
 
 void init()
 {
