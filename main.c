@@ -401,8 +401,7 @@ void draw_frame()
 void init()
 {
     SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_CreateWindowAndRenderer(WIDTH,
-     HEIGHT, 0, &win, &renderer); // adds segment spacing height and width to fix apple border spawning
+    SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, 0, &win, &renderer); 
 
     SDL_RenderSetScale(renderer, 1, 1);
 
@@ -432,7 +431,6 @@ void update(float dt)
 // int SDLMAIN_DECLSPEC SDL_main(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
-
     char title[64];
     init();
     // free(p_snake_head);

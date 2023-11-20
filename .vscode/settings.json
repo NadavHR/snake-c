@@ -1,7 +1,7 @@
 {
-    "cmake.mingwSearchDirs": [
+    "cmake.additionalCompilerSearchDirs": [
         "C:\\mingw-w64\\mingw64\\bin"
     ],
     "cmake.generator": "MinGW Makefiles",
-    "cmake.options.statusBarVisibility": "visible"
+    "cmake.options.statusBarVisibility": "visible",
 }
